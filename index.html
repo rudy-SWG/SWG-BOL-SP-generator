@@ -244,7 +244,7 @@ textarea{resize:vertical;min-height:50px;}
     <button class="btn-print" onclick="printDoc('bol')">&#9113; Print BOL</button>
     <button class="btn-print" onclick="printDoc('sp')">&#9113; Print Shipping Paper</button>
   </div>
-  <div style="padding:10px;margin:8px 0;border:2px solid #a33;background:#fff5f2;font-size:12px;"><strong>Hazmat shipping-paper safety check</strong><br>Enter the authorized 24-hour emergency-response telephone number applicable to this shipment. Do not use CHEMTREC unless Southwest Gases has an applicable registration or other valid authorization.<br><label for="emergency-phone">Authorized emergency phone</label><input id="emergency-phone" type="tel" placeholder="Verified 24-hour response number" style="width:100%;margin:5px 0;padding:7px;"><label style="display:block;"><input id="emergency-verified" type="checkbox"> I have verified this number and the applicable emergency-response arrangement for this shipment.</label><div style="font-size:11px;margin-top:5px;">Document preparation does not replace DOT shipping-paper certification and compliance review.</div></div>
+  <div style="padding:10px;margin:8px 0;border:2px solid #a33;background:#fff5f2;font-size:12px;"><strong>Hazmat shipping-paper safety check</strong><br>Enter the authorized 24-hour emergency-response telephone number applicable to this shipment. Do not use CHEMTREC unless Southwest Gases has an applicable registration or other valid authorization.<br><label for="emergency-phone">Authorized emergency phone</label><input id="emergency-phone" type="tel" placeholder="Verified 24-hour response number" style="width:100%;margin:5px 0;padding:7px;"><label for="emergency-provider">Emergency-response provider / registered party name or contract identifier</label><input id="emergency-provider" type="text" placeholder="Provider or registrant / contract ID" style="width:100%;margin:5px 0;padding:7px;"><label style="display:block;"><input id="emergency-verified" type="checkbox"> I have verified this number and the applicable emergency-response arrangement for this shipment.</label><div style="font-size:11px;margin-top:5px;">Document preparation does not replace DOT shipping-paper certification and compliance review.</div></div>
   <button class="btn-clear" onclick="clearForm()">&#x21BA; Clear All Fields</button>
   <div class="status-msg" id="status-msg"></div>
 
@@ -396,6 +396,7 @@ textarea{resize:vertical;min-height:50px;}
       </tr></thead>
       <tbody id="sdoc-line-items"></tbody>
     </table>
+    <div style="font-size:9px;border:1px solid #444;padding:8px;margin:8px 0;"><strong>SHIPPER CERTIFICATION (49 CFR 172.204)</strong><div style="margin-top:5px;">This is to certify that the above-named materials are properly classified, described, packaged, marked and labeled, and are in proper condition for transportation according to the applicable regulations of the Department of Transportation.</div><div style="display:flex;gap:20px;margin-top:12px;"><span style="flex:2;border-top:1px solid #333;padding-top:3px;">Authorized shipper/agent signature</span><span style="flex:1;border-top:1px solid #333;padding-top:3px;">Date</span></div><div style="font-size:8px;margin-top:5px;">Must be signed by an authorized person where certification is required. This document is not certified until signed.</div></div>
     <div class="sp-bottom">
       <div class="sp-sig-block">
         <div class="sp-sig-label">THIS SHIPMENT WAS ACCEPTED BY:</div>
@@ -497,11 +498,14 @@ function generateAll(){
   if(lineItems.length===0){alert('Please add at least one product.');return;}
   const emergencyPhone=val('emergency-phone').trim();
   const emergencyVerified=document.getElementById('emergency-verified').checked;
+  const emergencyProvider=val('emergency-provider').trim();
+  if(!emergencyProvider){alert('Enter the emergency-response provider or registered party name / contract identifier.');return;}
   if(!emergencyPhone||!emergencyVerified){alert('Before generating hazmat documents, enter an authorized 24-hour emergency-response number and confirm the applicable arrangement is verified. Do not use an unregistered CHEMTREC number.');return;}
   generateBOL();
   generateSP();
   document.getElementById('bdoc-emergency-contact').textContent='EMERGENCY RESPONSE: '+emergencyPhone;
-  document.getElementById('sdoc-emergency-contact').textContent=emergencyPhone;
+  document.getElementById('sdoc-emergency-contact').textContent=emergencyPhone+' | '+emergencyProvider;
+  document.getElementById('bdoc-emergency-contact').textContent='EMERGENCY RESPONSE: '+emergencyPhone+' | '+emergencyProvider;
   document.getElementById('preview-placeholder').style.display='none';
   document.getElementById('doc-tabs').classList.add('visible');
   switchTab('bol');
@@ -556,7 +560,7 @@ function generateSP(){
   lineItems.forEach(item=>{
     totalShipped+=item.qty;
     if(item.qtyReturned!==''){totalReturned+=parseInt(item.qtyReturned);hasRet=true;}
-    const desc=item.p.un+', '+item.p.propName+'\nClass '+item.p.hazClass+' &#8212; '+item.p.hazDesc+'\n'+item.p.sizeVal+' '+item.p.sizeUnit;
+    const desc=item.p.un+', '+item.p.propName+', '+item.p.hazClass+'\n'+item.qty+' cylinders ('+item.p.size+') | Gross weight: '+item.weight+' lb';
     const retCell=item.qtyReturned!==''?item.qtyReturned:'';
     rowsHtml+=`<tr><td class="col-date">${fmtDate}</td><td class="col-item">${item.p.itemCode}</td><td style="white-space:pre-line;font-size:8.5px;">${desc}</td><td class="col-qty">${item.qty}</td><td class="col-ret" style="text-align:center;">${retCell}</td><td class="col-uom" style="text-align:center;">CYL</td></tr>`;
   });
@@ -580,7 +584,7 @@ function switchTab(tab){
 }
 
 function printDoc(which){
-  if(!val('emergency-phone').trim()||!document.getElementById('emergency-verified').checked){alert('Printing is blocked until an authorized emergency-response arrangement is verified.');return;}
+  if(!val('emergency-phone').trim()||!val('emergency-provider').trim()||!document.getElementById('emergency-verified').checked){alert('Printing is blocked until an authorized emergency-response arrangement is verified.');return;}
   const bolEl=document.getElementById('bol-doc');
   const spEl=document.getElementById('sp-doc');
   if((!bolEl.classList.contains('visible'))&&(!spEl.classList.contains('visible'))){alert('Generate the documents first.');return;}
@@ -593,7 +597,7 @@ function printDoc(which){
 }
 
 function clearForm(){
-  ['doc-date','bol-number','cust-num','po-number','ship-to-company','ship-to-street','ship-to-city','ship-to-statzip','deliver-to','bill-name','bill-street','bill-city','bill-statzip','special-instructions','trailer-no','scac','pro-no','item-qty','item-weight','item-returned','handling-units','emergency-phone'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['doc-date','bol-number','cust-num','po-number','ship-to-company','ship-to-street','ship-to-city','ship-to-statzip','deliver-to','bill-name','bill-street','bill-city','bill-statzip','special-instructions','trailer-no','scac','pro-no','item-qty','item-weight','item-returned','handling-units','emergency-phone','emergency-provider'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('emergency-verified').checked=false;
   document.getElementById('doc-date').value=today;
   document.getElementById('carrier-name').value='PRONTO DELIVERY SERVICE';
