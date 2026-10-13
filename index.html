@@ -228,6 +228,9 @@ textarea{resize:vertical;min-height:50px;}
   <div class="items-list" id="items-list"><div class="items-empty">No products added yet.</div></div>
   <div class="weight-total" id="weight-total" style="display:none;">Total Weight: <strong id="total-weight-display">0</strong> lbs</div>
 
+  <div class="field-row"><div class="field-group"><label>Handling Units / Pallets (BOL)</label><input type="number" id="handling-units" min="0" step="1" placeholder="e.g. 1"></div><div class="field-group"><label>Handling Unit Type</label><select id="handling-type"><option value="metal pallet">Metal pallet</option><option value="wood pallet">Wood pallet</option><option value="pallet">Pallet</option><option value="other handling unit">Other</option></select></div></div>
+  <div style="font-size:10px;margin-bottom:10px;">Handling units are separate from the DOT package count. Example: 12 cylinders secured to 1 metal pallet.</div>
+
   <div class="section-label">BOL Details <span style="color:var(--orange-lt);font-weight:400;font-size:9px;">&#9658; BOL only</span></div>
   <div class="field-row-3">
     <div class="field-group"><label>Trailer #</label><input type="text" id="trailer-no" placeholder="&#8212;"></div>
@@ -522,7 +525,9 @@ function generateBOL(){
   document.getElementById('bdoc-freight-terms').textContent=val('freight-terms');
   document.getElementById('bdoc-ship-to').innerHTML=shipToLines||'&#8212;';
   document.getElementById('bdoc-deliver-to').textContent=val('deliver-to')||'&#8212;';
-  document.getElementById('bdoc-special').textContent=val('special-instructions')||'None';
+  const handlingCount=val('handling-units');
+  const handlingNote=handlingCount?('Handling units: '+handlingCount+' '+document.getElementById('handling-type').value+(Number(handlingCount)===1?'':'s')+'; cylinders remain the DOT packages.') : '';
+  document.getElementById('bdoc-special').textContent=[handlingNote,val('special-instructions')].filter(Boolean).join(' | ')||'None';
   document.getElementById('bdoc-trailer').textContent=val('trailer-no')||'&#8212;';
   const scacPro=[val('scac'),val('pro-no')].filter(Boolean).join(' / ')||'&#8212;';
   document.getElementById('bdoc-scac-pro').innerHTML=scacPro;
@@ -581,7 +586,7 @@ function printDoc(which){
 }
 
 function clearForm(){
-  ['doc-date','bol-number','cust-num','po-number','ship-to-company','ship-to-street','ship-to-city','ship-to-statzip','deliver-to','bill-name','bill-street','bill-city','bill-statzip','special-instructions','trailer-no','scac','pro-no','item-qty','item-weight','item-returned'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['doc-date','bol-number','cust-num','po-number','ship-to-company','ship-to-street','ship-to-city','ship-to-statzip','deliver-to','bill-name','bill-street','bill-city','bill-statzip','special-instructions','trailer-no','scac','pro-no','item-qty','item-weight','item-returned','handling-units'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('doc-date').value=today;
   document.getElementById('carrier-name').value='PRONTO DELIVERY SERVICE';
   document.getElementById('freight-terms').value='Prepaid';
@@ -590,6 +595,7 @@ function clearForm(){
   document.getElementById('same-bill-as-ship').checked=true;
   document.getElementById('billto-fields').style.display='none';
   document.getElementById('product-select').value='';
+  document.getElementById('handling-type').value='metal pallet';
   lineItems=[];renderItemsList();
   document.getElementById('bol-doc').classList.remove('visible');
   document.getElementById('sp-doc').classList.remove('visible');
