@@ -203,6 +203,7 @@ textarea{resize:vertical;min-height:50px;}
           <option value="AR_300CF">Argon &#8212; 300 CF (UN1006)</option>
           <option value="CD_50LB">Carbon Dioxide &#8212; 50 LB Cylinder (UN1013)</option>
           <option value="CD_20LB">Carbon Dioxide &#8212; 20 LB Cylinder (UN1013)</option>
+          <option value="HE_200CF">Helium &#8212; 200 CF (UN1046)</option>
           <option value="HE_300CF">Helium &#8212; 300 CF (UN1046)</option>
           <option value="NI_300CF">Nitrogen &#8212; 300 CF (UN1066)</option>
         </optgroup>
@@ -219,7 +220,7 @@ textarea{resize:vertical;min-height:50px;}
     </div>
     <div class="field-row">
       <div class="field-group" style="margin-bottom:0;"><label>Qty Shipped <span class="required">*</span></label><input type="number" id="item-qty" placeholder="e.g. 2" min="1" oninput="calcItemWeight()"></div>
-      <div class="field-group" style="margin-bottom:0;"><label>Est. Weight (lbs) <span class="opt">&#9679; BOL</span></label><input type="number" id="item-weight" placeholder="auto-calc" readonly></div>
+      <div class="field-group" style="margin-bottom:0;"><label>Est. Weight (lbs) <span class="opt">&#9679; BOL</span></label><input type="number" id="item-weight" placeholder="Enter verified total weight" min="0.01" step="0.01"><div style="font-size:10px;margin-top:4px;">Weight is for this line of cylinders only. If using a palletized gross weight, include pallet weight once and do not add it again.</div></div>
     </div>
     <div class="field-group" style="margin-bottom:0;margin-top:10px;"><label>Qty Returned <span class="opt">&#9679; SP · leave blank = fill at delivery</span></label><input type="number" id="item-returned" placeholder="leave blank" min="0"></div>
     <button class="btn-add-item" onclick="addItem()">+ Add to Shipment</button>
@@ -418,6 +419,7 @@ const PRODUCTS={
   'AR_300CF':{display:'Argon &mdash; 300 CF',un:'UN 1006',unShort:'UN1006',propName:'ARGON, COMPRESSED',hazClass:'2.2',hazDesc:'NON-FLAMMABLE GAS',size:'300 CF',sizeVal:'300',sizeUnit:'CF',lbs:147,itemCode:'AR 300'},
   'CD_50LB':{display:'Carbon Dioxide &mdash; 50 LB Cyl',un:'UN 1013',unShort:'UN1013',propName:'CARBON DIOXIDE',hazClass:'2.2',hazDesc:'NON-FLAMMABLE GAS',size:'50 LB CYL',sizeVal:'50',sizeUnit:'LB',lbs:99,itemCode:'CD 50LB'},
   'CD_20LB':{display:'Carbon Dioxide &mdash; 20 LB Cyl',un:'UN 1013',unShort:'UN1013',propName:'CARBON DIOXIDE',hazClass:'2.2',hazDesc:'NON-FLAMMABLE GAS',size:'20 LB CYL',sizeVal:'20',sizeUnit:'LB',lbs:48,itemCode:'CD 20LB'},
+  'HE_200CF':{display:'Helium &mdash; 200 CF',un:'UN 1046',unShort:'UN1046',propName:'HELIUM, COMPRESSED',hazClass:'2.2',hazDesc:'NON-FLAMMABLE GAS',size:'200 CF',sizeVal:'200',sizeUnit:'CF',lbs:null,itemCode:'HE 200'},
   'HE_300CF':{display:'Helium &mdash; 300 CF',un:'UN 1046',unShort:'UN1046',propName:'HELIUM, COMPRESSED',hazClass:'2.2',hazDesc:'NON-FLAMMABLE GAS',size:'300 CF',sizeVal:'300',sizeUnit:'CF',lbs:119,itemCode:'HE 300'},
   'NI_300CF':{display:'Nitrogen &mdash; 300 CF',un:'UN 1066',unShort:'UN1066',propName:'NITROGEN, COMPRESSED',hazClass:'2.2',hazDesc:'NON-FLAMMABLE GAS',size:'300 CF',sizeVal:'300',sizeUnit:'CF',lbs:138,itemCode:'NI 300'},
   // Research Grade
@@ -439,7 +441,7 @@ function calcItemWeight(){
   const key=document.getElementById('product-select').value;
   const qty=parseInt(document.getElementById('item-qty').value);
   const p=PRODUCTS[key];
-  document.getElementById('item-weight').value=(p&&!isNaN(qty)&&qty>0)?qty*p.lbs:'';
+  document.getElementById('item-weight').value=(p&&!isNaN(qty)&&qty>0&&p.lbs!=null)?qty*p.lbs:'';
 }
 
 function addItem(){
@@ -449,7 +451,9 @@ function addItem(){
   if(!key){alert('Please select a product.');return;}
   if(isNaN(qty)||qty<1){alert('Please enter a valid quantity.');return;}
   const p=PRODUCTS[key];
-  lineItems.push({key,qty,weight:qty*p.lbs,qtyReturned:ret,p});
+  const weight=parseFloat(document.getElementById('item-weight').value);
+  if(!Number.isFinite(weight)||weight<=0){alert('Enter a verified total weight for this line item before adding it.');return;}
+  lineItems.push({key,qty,weight,qtyReturned:ret,p});
   renderItemsList();
   document.getElementById('product-select').value='';
   document.getElementById('item-qty').value='';
